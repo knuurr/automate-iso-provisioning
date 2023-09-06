@@ -1,0 +1,16 @@
+network:
+  version: 2
+  renderer: networkd
+  wifis:
+    wlp2s0:
+      dhcp4: no
+      dhcp6: no
+      addresses: [192.168.100.50/24]
+      nameservers:
+        addresses: [192.168.100.1, 8.8.8.8]
+      access-points:
+        "SSID":
+          password: "PLAINTEXT-PWD"
+      routes:
+        - to: default
+          via: 192.168.100.1

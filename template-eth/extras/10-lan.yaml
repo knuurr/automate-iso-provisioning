@@ -1,0 +1,8 @@
+# Netplan config
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    # Must match your adapter's name
+    enp3s0:
+      dhcp4: true

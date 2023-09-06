@@ -1,0 +1,135 @@
+#cloud-config
+autoinstall:
+  # Specify localization and keyboard settings
+  version: 1
+  locale: en_US
+  timezone: "Europe/Warsaw"
+  keyboard:
+    layout: "pl"
+
+  # Configure network settings using networkd renderer
+  network:
+    version: 2
+    renderer: networkd
+    ethernets:
+      enp0s3:   # Replace with your actual interface name
+        dhcp4: true
+        dhcp6: false
+        nameservers:
+          addresses: [8.8.8.8, 8.8.4.4]  # Replace with your DNS server IP addresses
+  # Configure system identity
+  identity:
+    hostname: autoinstall
+    username: admin
+    # Hashed password, e.g., generated with 'mkpasswd -m sha-512'
+    # Here hash is for password "admin" - USE AS EXAMPLE AND FOR DEBUG
+    password: "$6$8UP6rgY6oe3LpCgZ$nXFEJHzoB8Q0Pk//StiQs4AM7v9UjDm9/yHOYxClUQxP7oOqY6SVLgL7y2pS1PCLB5CbIwMHoLwec3Ows8Qe//"
+
+  # Add users to the system. Users are added after groups are added.
+  # Note: Most of these configuration options will not be honored if the user
+  #       already exists. Following options are the exceptions and they are
+  #       applicable on already-existing users:
+  #       - 'plain_text_passwd', 'hashed_passwd', 'lock_passwd', 'sudo',
+  #         'ssh_authorized_keys', 'ssh_redirect_user'.
+  # users:
+
+  # AKA Define additional users and their settings
+  user-data:
+    users:
+      - name: ansible
+        gecos: Ansible User
+        sudo: "ALL=(ALL) NOPASSWD:ALL"
+        groups: sudo
+        lock_passwd: true
+        shell: /bin/bash
+        ssh_authorized_keys:
+          # Paste PUBKEY here
+          - "PUBKEY"
+    
+    # Display a final message after cloud-init execution
+    final_message: |
+      cloud-init has finished
+      version: $version
+      timestamp: $timestamp
+      datasource: $datasource
+      uptime: $uptime
+
+    # Run commands after cloud-init finishes
+    # runcmd:
+      # - dpkg -i /media/wpasupplicant_2.10-6_amd64.deb
+      # - netplan apply
+      # - ip link set enp3s0 up
+
+ 
+  # Late commands to be executed before finalizing installation
+  late-commands:
+    - date >> /target/etc/birth_cert
+    # - rm -f /target/etc/netplan/*
+    # - cp /media/10-lan.yaml /target/etc/netplan/10-lan.yaml
+
+  # Configure SSH for the installed system. A mapping that can contain keys:
+  ssh:
+    install-server: true
+    # Provide authorized SSH keys for "admin" user
+    authorized-keys:
+      - "PUBKEY"
+    allow-pw: false
+
+
+  # The type of updates that will be downloaded and installed after the system install.
+  updates: security
+
+  # Configure storage layout
+  # This configuration will create two partitions on the first disk, sda-part1 and sda-part2. The first partition will be 512MB and formatted as FAT32, and marked as bootable. The second partition will use the rest of the disk, be formatted as ext4, and mounted as root (/). The boot-size option is used to specify the size of the boot partition.
+  storage:
+    layout:
+      name: direct
+    grub:
+      install_devices:
+        - /dev/sda
+    config:
+      - type: partition
+        id: sda-part1
+        size: 256MB
+        bootable: true
+        wipe: true
+      - type: partition
+        id: sda-part2
+        preserve: false
+        wipe: true
+      - type: format
+        id: sda-part1
+        fstype: fat32
+      - type: format
+        id: sda-part2
+        fstype: ext4
+      - type: mount
+        id: sda-part2
+        path: /
+    boot-size: 256MB
+
+
+  # Shell commands to run after the install has completed successfully
+  # and any updates and packages installed,
+  #  just before the system reboots
+
+  # packages:
+   # - tmux
+   # - git
+   # - zsh
+
+  # BELOW FROM: https://www.jimangel.io/posts/automate-ubuntu-22-04-lts-bare-metal/
+
+  # Request the system to power off or reboot automatically after the installation has finished.
+  shutdown: poweroff
+  
+  # Specify kernel flavor to install
+  kernel:
+    # The flavor of the kernel, e.g., generic or hwe.
+    flavor: generic
+  
+
+  # A list of config keys to still show in the UI.
+  # interactive-sections:
+    # - network
+    # - storage
